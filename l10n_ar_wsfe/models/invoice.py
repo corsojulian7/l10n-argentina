@@ -575,6 +575,17 @@ class AccountInvoice(models.Model):
         currency_code = currency_code_ids[0].code
         return currency_code
 
+    @api.multi
+    def get_taxes_values(self):
+        tax_grouped = super(AccountInvoice, self).get_taxes_values()
+        for key in tax_grouped:
+            tax = tax_grouped[key]
+            tax_id = self.env['account.tax'].browse(tax['tax_id'])
+            computed_taxes = tax_id.compute_all(tax['base'], partner=self.partner_id)['taxes']
+            # TODO Probar con Childs
+            tax['amount'] = sum(x['amount'] for x in computed_taxes)
+        return tax_grouped
+
 
 class AccountInvoiceTax(models.Model):
     _name = "account.invoice.tax"
